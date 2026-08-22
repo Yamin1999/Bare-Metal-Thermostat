@@ -1,8 +1,8 @@
 #include "adc.h"
+#include "uart.h"
 #include "gpio.h"
 #include "stm32f4xx.h"
-
-volatile uint16_t adc_result = 0;
+#include <stdio.h>
 
 int main(void)
 {
@@ -11,6 +11,9 @@ int main(void)
 
     /* Enable ADC1 clock */
     RCC->APB2ENR |= (1 << 8);
+
+    /* Enable USART2 clock */
+    RCC->APB1ENR |= (1 << 17);
 
     GPIO_Config led_config = {
         .mode = GPIO_MODE_OUTPUT,
@@ -29,18 +32,26 @@ int main(void)
     GPIO_Init(GPIOA, 0, &potentiometer_config); /* PA0 as ADC input */
 
     adc_init();
-    
+    uart_init(115200);
+
+    uart_send_string("UART ready\r\n");
+
     while(1)
     {
-        adc_result = adc_read();
+        uint16_t result = adc_read();
+        char buf[8];
+        sprintf(buf, "%u", result);
+        uart_send_string("ADC Value: ");
+        uart_send_string(buf);
+        uart_send_string("\r\n");
 
-        if (adc_result > 2047)
+        if (result > 2047)
         {
-            GPIO_WritePin(GPIOA, 5, 1);
+            GPIO_WritePin(GPIOA, 5, GPIO_PIN_SET);
         }
         else
         {
-            GPIO_WritePin(GPIOA, 5, 0);
+            GPIO_WritePin(GPIOA, 5, GPIO_PIN_RESET);
         }
     }
 }
