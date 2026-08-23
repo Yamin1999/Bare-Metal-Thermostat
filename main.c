@@ -1,57 +1,44 @@
-#include "adc.h"
+#include "bme280.h"
 #include "uart.h"
-#include "gpio.h"
+#include "systick.h"
 #include "stm32f4xx.h"
 #include <stdio.h>
 
 int main(void)
 {
-    /* Enable GPIOA and GPIOC clock */
-    RCC->AHB1ENR |= ((1 << 0) | (1 << 2));
+    /* Enable clocks */
+    RCC->AHB1ENR |= ((1 << 0) | (1 << 1));  /* GPIOA and GPIOB */
+    RCC->APB1ENR |= ((1 << 17) | (1 << 21)); /* USART2 and I2C1 */
 
-    /* Enable ADC1 clock */
-    RCC->APB2ENR |= (1 << 8);
-
-    /* Enable USART2 clock */
-    RCC->APB1ENR |= (1 << 17);
-
-    GPIO_Config led_config = {
-        .mode = GPIO_MODE_OUTPUT,
-        .otype = GPIO_OTYPE_PP,
-        .speed = GPIO_SPEED_LOW,
-        .pupd = GPIO_PUPD_NONE
-    };
-    GPIO_Init(GPIOA, 5, &led_config);
-
-    GPIO_Config potentiometer_config = {
-        .mode  = GPIO_MODE_ANALOG,
-        .otype = GPIO_OTYPE_PP,   /* Not used in analog mode */
-        .speed = GPIO_SPEED_LOW, /* Not critical for analog */
-        .pupd  = GPIO_PUPD_NONE
-    };
-    GPIO_Init(GPIOA, 0, &potentiometer_config); /* PA0 as ADC input */
-
-    adc_init();
+    systick_init();
     uart_init(115200);
+    bme280_init_i2c();
 
-    uart_send_string("UART ready\r\n");
+    uart_send_string("BME280 temperature monitor ready\r\n");
 
-    while(1)
+    while (1)
     {
-        uint16_t result = adc_read();
-        char buf[8];
-        sprintf(buf, "%u", result);
-        uart_send_string("ADC Value: ");
-        uart_send_string(buf);
-        uart_send_string("\r\n");
+        int32_t temp = bme280_read_temp_i2c();
+        uint32_t pressure = bme280_read_pressure_i2c();
+        uint32_t humidity = bme280_read_humidity_i2c();
 
-        if (result > 2047)
-        {
-            GPIO_WritePin(GPIOA, 5, GPIO_PIN_SET);
-        }
-        else
-        {
-            GPIO_WritePin(GPIOA, 5, GPIO_PIN_RESET);
-        }
+        char buf[32];
+
+        sprintf(buf, "%ld.%02ld", temp / 100, temp % 100);
+        uart_send_string("Temperature: ");
+        uart_send_string(buf);
+        uart_send_string(" C\r\n");
+
+        sprintf(buf, "%lu.%02lu", pressure / 25600, (pressure % 25600) / 256);
+        uart_send_string("Pressure: ");
+        uart_send_string(buf);
+        uart_send_string(" hPa\r\n");
+
+        sprintf(buf, "%lu.%02lu", humidity / 1024, ((humidity % 1024) * 100) / 1024);
+        uart_send_string("Humidity: ");
+        uart_send_string(buf);
+        uart_send_string(" %RH\r\n\r\n");
+
+        delay_ms(1000);
     }
 }
