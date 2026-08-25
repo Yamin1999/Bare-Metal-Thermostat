@@ -3,20 +3,31 @@
 
 void timer_init(void)
 {
-    /* Configure TIM2 to generate an interrupt every 100 ms */
-    
-    /* Prescaler: 16 MHz / (1599 + 1) = 10 kHz */
-    TIM2->PSC = 1599;
-    
-    /* Auto-reload: 10 kHz / (999 + 1) = 10 Hz (100 ms period) */
-    TIM2->ARR = 999;
-    
+    /* Configure TIM2 to generate an interrupt every 500 ms */
+
+    /* Prescaler: 16 MHz / (15999 + 1) = 1 kHz */
+    TIM2->PSC = 15999;
+
+    /* Auto-reload: 1 kHz / (499 + 1) = 2 Hz (500 ms period) */
+    TIM2->ARR = 499;
+
     /* Enable update interrupt */
     TIM2->DIER |= (1 << 0);  /* UIE: Update interrupt enable */
-    
-    /* Enable TIM2 interrupt in NVIC */
+
+    /* Enable TIM2 interrupt in NVIC (low priority) */
+    NVIC_SetPriority(TIM2_IRQn, 2);
     NVIC_EnableIRQ(TIM2_IRQn);
-    
-    /* Start the timer */
-    TIM2->CR1 |= (1 << 0);  /* CEN: Counter enable */
+
+    /* Timer starts stopped, call timer_start() to begin */
+}
+
+void timer_start(void)
+{
+    TIM2->CNT = 0;
+    TIM2->CR1 |= (1 << 0);   /* CEN: Counter enable */
+}
+
+void timer_stop(void) 
+{
+    TIM2->CR1 &= ~(1 << 0);  /* CEN: Counter disable */
 }

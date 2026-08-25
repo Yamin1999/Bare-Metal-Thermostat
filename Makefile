@@ -36,7 +36,7 @@ OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 
 # Target
-TARGET = $(BUILD_DIR)/gpio_blink
+TARGET = $(BUILD_DIR)/thermostat
 
 # Default target: build everything
 all: $(BUILD_DIR) $(TARGET).elf
