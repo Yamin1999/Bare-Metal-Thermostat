@@ -427,3 +427,12 @@ Possible extensions include:
 The project demonstrates the complete embedded control flow from sensor acquisition to display, user configuration, control output, and serial diagnostics.
 
 It is intended primarily as a **bare-metal STM32 learning and portfolio project** demonstrating low-level peripheral programming and integration of multiple hardware interfaces.
+
+
+## License
+
+The original application and driver code in this repository is licensed
+under the MIT License.
+
+Third-party/vendor components, including CMSIS and STMicroelectronics
+provided files, remain subject to their respective licenses.
